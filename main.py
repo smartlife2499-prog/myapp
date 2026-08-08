@@ -1,3 +1,5 @@
+import asyncio
+
 import flet as ft
 
 # --- Quiz Content (data-driven: edit this dict to add/change questions) ---
@@ -473,6 +475,215 @@ QUIZ_DATA = {
         ("Code:\nclass Base:\n    def __init__(self):\n        print('Base init')\nclass Derived(Base):\n    def __init__(self):\n        print('Derived init')\n        super().__init__()\nDerived()\n\nWhat is the output?", "Derived init\nBase init — the derived constructor's print runs first, then it explicitly calls the parent constructor."),
         ("Code:\nclass Logger:\n    logs = []\n    def log(self, msg):\n        Logger.logs.append(msg)\nl1 = Logger()\nl2 = Logger()\nl1.log('first')\nl2.log('second')\nprint(Logger.logs)\n\nWhat is the output and why do both instances share the same list?", "['first', 'second'] — logs is a class attribute (a mutable list), so all instances reference the same underlying object."),
     ],
+    "Iterators, Generators, and Advanced Functions": [
+        ("What is an iterable?", "Any object capable of returning its members one at a time, such as a list, string, or dict — anything that supports iter()."),
+        ("What is an iterator?", "An object with both __iter__ and __next__ methods, which produces values one at a time and remembers its position."),
+        ("Code:\nnums = [1, 2, 3]\nit = iter(nums)\nprint(next(it))\nprint(next(it))\n\nWhat is the output?", "1\n2 — each call to next() advances the iterator by one item."),
+        ("Code:\nit = iter([1, 2])\nnext(it)\nnext(it)\nnext(it)\n\nWhat happens on the third call?", "StopIteration is raised, since the iterator has no more items to return."),
+        ("Code:\nnums = [1, 2, 3]\nprint(hasattr(nums, '__iter__'), hasattr(nums, '__next__'))\n\nWhat is the output and why?", "True False — a list is iterable (has __iter__) but is not itself an iterator (no __next__); iter() must be called on it first."),
+        ("What is the difference between an iterable and an iterator?", "An iterable can produce an iterator via iter(); an iterator is the object that actually tracks state and yields values via next()."),
+        ("Code:\ndef count_up(n):\n    i = 1\n    while i <= n:\n        yield i\n        i += 1\nfor x in count_up(3):\n    print(x)\n\nWhat is the output?", "1\n2\n3"),
+        ("What is a generator function?", "A function containing at least one yield statement, which returns a generator (lazy iterator) instead of executing immediately."),
+        ("Code:\ndef gen():\n    yield 1\n    yield 2\ng = gen()\nprint(type(g))\n\nWhat is the output?", "<class 'generator'> — calling a generator function returns a generator object without running the body yet."),
+        ("Code:\ndef gen():\n    print('start')\n    yield 1\n    print('middle')\n    yield 2\ng = gen()\nprint('created')\nprint(next(g))\n\nWhat is the output and why doesn't 'start' print immediately?", "created\nstart\n1 — generator bodies only execute up to the next yield when next() is called, not when the generator is created."),
+        ("Code:\ndef gen():\n    yield 1\n    yield 2\ng = gen()\nnext(g)\nnext(g)\nnext(g)\n\nWhat happens on the third next() call?", "StopIteration is raised, since the generator function has finished running past its last yield."),
+        ("Code:\nsquares = (x ** 2 for x in range(4))\nprint(type(squares))\nprint(list(squares))\n\nWhat is the output?", "<class 'generator'>\n[0, 1, 4, 9] — parentheses create a generator expression, evaluated lazily until consumed."),
+        ("Code:\ngen = (x for x in range(3))\nprint(list(gen))\nprint(list(gen))\n\nWhat is the output and why does the second list come back empty?", "[0, 1, 2]\n[] — a generator is exhausted after being fully consumed once; it cannot be restarted or reused."),
+        ("What is the main advantage of a generator over building a full list?", "Generators produce values lazily and hold only the current state in memory, avoiding the memory cost of materializing an entire large sequence at once."),
+        ("Code:\ndef first_n_squares(n):\n    for i in range(n):\n        yield i ** 2\nprint(sum(first_n_squares(5)))\n\nWhat is the output?", "30 — sum() can consume a generator directly, since it's iterable."),
+        ("Code:\ndef gen():\n    for i in range(3):\n        yield i\ng = gen()\nprint(list(g))\n\nWhat is the output?", "[0, 1, 2] — list() drains the generator fully, collecting every yielded value."),
+        ("Code:\ndef countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\nfor val in countdown(3):\n    print(val)\n\nWhat is the output?", "3\n2\n1"),
+        ("Code:\ndef gen():\n    x = yield 1\n    print('received', x)\n    yield 2\ng = gen()\nprint(next(g))\nprint(g.send('hello'))\n\nWhat is the output and what does send() do?", "1\nreceived hello\n2 — send() resumes the generator, passing a value in as the result of the paused yield expression."),
+        ("Code:\ndef inner():\n    yield 1\n    yield 2\ndef outer():\n    yield 0\n    yield from inner()\n    yield 3\nprint(list(outer()))\n\nWhat is the output and what does yield from do?", "[0, 1, 2, 3] — yield from delegates iteration to a sub-generator/iterable, yielding each of its values in turn."),
+        ("Code:\ndef gen():\n    try:\n        yield 1\n        yield 2\n    finally:\n        print('cleanup')\ng = gen()\nnext(g)\ng.close()\n\nWhat is the output and what does close() do?", "cleanup — close() raises GeneratorExit inside the generator at its current yield, triggering any finally block before stopping it."),
+        ("Code:\nimport itertools\nfor x in itertools.count(5, 2):\n    if x > 10:\n        break\n    print(x)\n\nWhat is the output?", "5\n7\n9 — itertools.count(start, step) produces an infinite arithmetic sequence, so a break is needed to stop it."),
+        ("Code:\nimport itertools\nprint(list(itertools.islice(range(100), 3)))\n\nWhat is the output?", "[0, 1, 2] — islice() lazily takes a slice of an iterable without needing it to support indexing."),
+        ("Code:\nimport itertools\nprint(list(itertools.chain([1, 2], [3, 4])))\n\nWhat is the output?", "[1, 2, 3, 4] — chain() lazily concatenates multiple iterables into one sequence."),
+        ("Code:\nimport itertools\nfor a, b in itertools.zip_longest([1, 2, 3], ['a', 'b'], fillvalue='-'):\n    print(a, b)\n\nWhat is the output?", "1 a\n2 b\n3 - — unlike zip(), zip_longest() continues until the longest iterable is exhausted, filling gaps."),
+        ("Code:\nimport itertools\nprint(list(itertools.cycle('AB'))[:5])\n\nWhat would this attempt to do, and why is it dangerous?", "It tries to build an infinite list, since cycle() repeats its input forever — this would hang or exhaust memory; it should instead be paired with islice() or a break in a loop."),
+        ("Code:\nimport itertools\nprint(list(itertools.permutations([1, 2, 3], 2)))\n\nWhat is the output?", "[(1, 2), (1, 3), (2, 1), (2, 3), (3, 1), (3, 2)] — all ordered pairs without repeating an element within a pair."),
+        ("Code:\nimport itertools\nprint(list(itertools.combinations([1, 2, 3], 2)))\n\nWhat is the output?", "[(1, 2), (1, 3), (2, 3)] — unordered selections, so (2, 1) is not included separately from (1, 2)."),
+        ("Code:\nimport itertools\nfor key, group in itertools.groupby([1, 1, 2, 2, 3]):\n    print(key, list(group))\n\nWhat is the output?", "1 [1, 1]\n2 [2, 2]\n3 [3] — groupby() clusters only consecutive equal elements, so the input should usually be sorted first."),
+        ("What does the yield keyword do inside a function?", "It pauses the function, returns a value to the caller, and preserves all local state so execution can resume from that point on the next call."),
+        ("What does the yield from expression do?", "It delegates to another iterable or generator, yielding each of its values in turn and forwarding sent values/exceptions back and forth."),
+        ("Code:\ndef gen():\n    yield 1\n    return 'done'\ng = gen()\nnext(g)\ntry:\n    next(g)\nexcept StopIteration as e:\n    print(e.value)\n\nWhat is the output and how does a generator's return value surface?", "done — a generator's return value is attached to the StopIteration exception raised when it finishes, accessible via .value."),
+        ("Code:\nsquares = [x**2 for x in range(5)]\nsquares_gen = (x**2 for x in range(5))\nprint(type(squares), type(squares_gen))\n\nWhat is the output and what's the key difference?", "<class 'list'> <class 'generator'> — the list comprehension builds the whole list immediately, while the generator expression computes values lazily on demand."),
+        ("What is a decorator?", "A function that takes another function (or class) and returns a modified or wrapped version of it, typically applied with @ syntax."),
+        ("Code:\ndef shout(func):\n    def wrapper(*args, **kwargs):\n        result = func(*args, **kwargs)\n        return result.upper()\n    return wrapper\n\n@shout\ndef greet(name):\n    return f'hello {name}'\n\nprint(greet('sam'))\n\nWhat is the output?", "HELLO SAM — @shout wraps greet so its return value is uppercased before being returned."),
+        ("Code:\ndef repeat(times):\n    def decorator(func):\n        def wrapper(*args, **kwargs):\n            for _ in range(times):\n                func(*args, **kwargs)\n        return wrapper\n    return decorator\n\n@repeat(3)\ndef say_hi():\n    print('hi')\n\nsay_hi()\n\nWhat is the output and what pattern is repeat()?", "hi\nhi\nhi — repeat(times) is a decorator factory: a function that returns a decorator configured with an argument."),
+        ("Code:\nimport functools\n\ndef logger(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        return func(*args, **kwargs)\n    return wrapper\n\n@logger\ndef add(a, b):\n    'Adds two numbers.'\n    return a + b\n\nprint(add.__name__, add.__doc__)\n\nWhat is the output and what does functools.wraps do?", "add Adds two numbers. — functools.wraps copies the original function's metadata (name, docstring) onto the wrapper, which would otherwise be lost."),
+        ("Code:\ndef trace(func):\n    def wrapper(*args, **kwargs):\n        print(f'Calling {func.__name__}')\n        return func(*args, **kwargs)\n    return wrapper\n\n@trace\ndef add(a, b):\n    return a + b\n\nprint(add(2, 3))\n\nWhat is the output?", "Calling add\n5"),
+        ("Code:\ndef double(func):\n    def wrapper(*args, **kwargs):\n        return 2 * func(*args, **kwargs)\n    return wrapper\n\n@double\n@double\ndef value():\n    return 5\n\nprint(value())\n\nWhat is the output and in what order do stacked decorators apply?", "20 — decorators apply bottom-up (closest to the function first), so value() -> 5 -> doubled to 10 -> doubled again to 20."),
+        ("Code:\nimport functools\n\n@functools.lru_cache(maxsize=None)\ndef fib(n):\n    if n <= 1:\n        return n\n    return fib(n - 1) + fib(n - 2)\n\nprint(fib(10))\n\nWhat is the output and what does lru_cache do?", "55 — lru_cache memoizes results by argument, so repeated/overlapping recursive calls are looked up instead of recomputed."),
+        ("What is a higher-order function?", "A function that takes one or more functions as arguments, returns a function, or both."),
+        ("Code:\ndef apply_op(a, b, op):\n    return op(a, b)\nimport operator\nprint(apply_op(4, 2, operator.sub))\n\nWhat is the output and what is the operator module used for here?", "2 — operator.sub is a function version of the - operator, so it's passed in and called just like any other function."),
+        ("Code:\nfrom functools import partial\ndef power(base, exp):\n    return base ** exp\nsquare = partial(power, exp=2)\nprint(square(5))\n\nWhat is the output and what does partial do?", "25 — partial pre-fills some arguments of a function, returning a new callable that only needs the rest."),
+        ("Code:\nnums = [3, 1, 4, 1, 5]\nprint(sorted(nums, key=lambda x: -x))\n\nWhat is the output and why use a lambda as key here?", "[5, 4, 3, 1, 1] — the key function transforms each element before comparison, so negating produces a descending sort."),
+        ("Code:\nwords = ['banana', 'kiwi', 'apple']\nprint(sorted(words, key=len))\n\nWhat is the output?", "['kiwi', 'apple', 'banana'] — sorted by string length rather than alphabetically."),
+        ("What is memoization?", "A caching technique that stores the results of expensive function calls and returns the cached result when the same inputs occur again."),
+        ("Code:\ndef make_counter():\n    count = 0\n    def counter():\n        nonlocal count\n        count += 1\n        return count\n    return counter\nc1 = make_counter()\nc2 = make_counter()\nprint(c1(), c1(), c2())\n\nWhat is the output and why is c2's count independent of c1's?", "1 2 1 — each call to make_counter() creates a fresh closure with its own separate count variable."),
+        ("Code:\ndef gen_pairs():\n    for i in range(3):\n        for j in range(3):\n            yield (i, j)\nprint(len(list(gen_pairs())))\n\nWhat is the output?", "9 — the nested loops yield one tuple per combination of i and j, 3 x 3 total."),
+        ("Code:\nclass Repeater:\n    def __init__(self, value, times):\n        self.value = value\n        self.times = times\n    def __iter__(self):\n        for _ in range(self.times):\n            yield self.value\nfor v in Repeater('x', 3):\n    print(v)\n\nWhat is the output and what does using a generator inside __iter__ achieve?", "x\nx\nx — defining __iter__ as a generator function is a concise way to make a custom class iterable, without writing a separate __next__ method."),
+        ("Code:\ndef safe_divide_gen(pairs):\n    for a, b in pairs:\n        try:\n            yield a / b\n        except ZeroDivisionError:\n            yield None\nprint(list(safe_divide_gen([(10, 2), (5, 0), (9, 3)])))\n\nWhat is the output?", "[5.0, None, 3.0] — the generator handles the error per-item and keeps yielding instead of stopping the whole iteration."),
+        ("Code:\nimport functools\ndef add_logging(func):\n    @functools.wraps(func)\n    def wrapper(*args, **kwargs):\n        print(f'args={args}, kwargs={kwargs}')\n        return func(*args, **kwargs)\n    return wrapper\n\n@add_logging\ndef greet(name, greeting='Hi'):\n    return f'{greeting}, {name}'\n\nprint(greet('Sam', greeting='Hello'))\n\nWhat is the output?", "args=('Sam',), kwargs={'greeting': 'Hello'}\nHello, Sam"),
+        ("Code:\ndef gen():\n    print('A')\n    yield\n    print('B')\n    yield\n    print('C')\ng = gen()\nfor _ in g:\n    pass\n\nWhat is the output?", "A\nB\nC — a for loop repeatedly calls next() until StopIteration, driving the generator through all its yields."),
+    ],
+    "Regular Expressions and String Processing": [
+        ("What is a regular expression?", "A pattern-matching language used to search, validate, and manipulate text based on defined rules."),
+        ("What module provides regular expression support in Python?", "The re module."),
+        ("Code:\nimport re\nprint(re.search('cat', 'the cat sat'))\n\nWhat does re.search return here?", "A Match object, since 'cat' is found within the string (its repr shows the match span and text)."),
+        ("Code:\nimport re\nprint(re.search('dog', 'the cat sat'))\n\nWhat is the output?", "None — search() returns None when the pattern isn't found anywhere in the string."),
+        ("Code:\nimport re\nm = re.search(r'\\d+', 'order 42 shipped')\nprint(m.group())\n\nWhat is the output?", "42 — \\d+ matches one or more digits, and .group() returns the matched text."),
+        ("Code:\nimport re\nprint(re.match('cat', 'the cat sat'))\n\nWhat is the output and how does match() differ from search()?", "None — match() only checks for a match at the very start of the string, while search() scans the whole string."),
+        ("Code:\nimport re\nprint(re.match('the', 'the cat sat'))\n\nWhat is the output?", "A Match object, since 'the' does appear right at the start of the string."),
+        ("Code:\nimport re\nprint(re.findall(r'\\d+', 'a1 b22 c333'))\n\nWhat is the output?", "['1', '22', '333'] — findall() returns every non-overlapping match as a list of strings."),
+        ("Code:\nimport re\nfor m in re.finditer(r'\\d+', 'a1 b22'):\n    print(m.group(), m.start())\n\nWhat is the output?", "1 1\n22 4 — finditer() yields Match objects one at a time, each with position info."),
+        ("Code:\nimport re\nprint(re.sub(r'\\d+', '#', 'a1 b22 c333'))\n\nWhat is the output?", "a# b# c# — sub() replaces every match of the pattern with the replacement string."),
+        ("Code:\nimport re\nprint(re.sub(r'\\d+', '#', 'a1 b22 c333', count=1))\n\nWhat is the output?", "a# b22 c333 — the count argument limits how many matches get replaced."),
+        ("Code:\nimport re\nprint(re.split(r'\\s*,\\s*', 'a, b,c ,  d'))\n\nWhat is the output?", "['a', 'b', 'c', 'd'] — split() breaks the string wherever the pattern matches, here a comma with optional surrounding spaces."),
+        ("Code:\nimport re\npattern = re.compile(r'\\d+')\nprint(pattern.findall('a1 b22'))\n\nWhat does re.compile() do and what is the output?", "['1', '22'] — compile() pre-builds a reusable pattern object, useful when the same pattern is applied many times."),
+        ("Code:\nimport re\nm = re.search(r'(\\w+)@(\\w+)\\.com', 'contact: sam@example.com')\nprint(m.group(1), m.group(2))\n\nWhat is the output?", "sam example — parentheses create capture groups, retrievable individually via .group(n)."),
+        ("Code:\nimport re\nm = re.search(r'(?P<user>\\w+)@(?P<domain>\\w+)\\.com', 'sam@example.com')\nprint(m.group('user'), m.group('domain'))\n\nWhat is the output and what does (?P<name>...) do?", "sam example — it creates a named capture group, accessible by name instead of only by position."),
+        ("Code:\nimport re\nprint(re.findall(r'a.c', 'abc a1c a\\nc'))\n\nWhat is the output and what does . match?", "['abc', 'a1c'] — . matches any character except a newline by default, so 'a\\nc' is not matched."),
+        ("Code:\nimport re\nprint(re.findall(r'colou?r', 'color colour colouur'))\n\nWhat is the output and what does ? mean here?", "['color', 'colour'] — ? makes the preceding character (u) optional, matching zero or one occurrence."),
+        ("Code:\nimport re\nprint(re.findall(r'ab*c', 'ac abc abbbc'))\n\nWhat is the output and what does * mean?", "['ac', 'abc', 'abbbc'] — * matches zero or more of the preceding character."),
+        ("Code:\nimport re\nprint(re.findall(r'ab+c', 'ac abc abbbc'))\n\nWhat is the output and how does + differ from *?", "['abc', 'abbbc'] — + requires at least one occurrence, so 'ac' (zero b's) doesn't match."),
+        ("Code:\nimport re\nprint(re.findall(r'\\bcat\\b', 'cat catalog cat'))\n\nWhat is the output and what does \\b mean?", "['cat', 'cat'] — \\b is a word boundary, so it matches 'cat' as a whole word but not as part of 'catalog'."),
+        ("Code:\nimport re\nprint(re.findall(r'^\\d+', '123abc 456'))\n\nWhat is the output and what does ^ mean here?", "['123'] — ^ anchors the match to the start of the string, so only the leading digits are found."),
+        ("Code:\nimport re\nprint(re.findall(r'\\d+$', 'abc123'))\n\nWhat is the output and what does $ mean?", "['123'] — $ anchors the match to the end of the string."),
+        ("Code:\nimport re\nprint(re.findall(r'[aeiou]', 'hello world'))\n\nWhat is the output and what does [aeiou] represent?", "['e', 'o', 'o'] — square brackets define a character class, matching any single character listed inside."),
+        ("Code:\nimport re\nprint(re.findall(r'[^aeiou ]', 'hi there'))\n\nWhat is the output and what does ^ inside brackets mean?", "['h', 't', 'h', 'r'] — inside a character class, ^ negates it, matching any character NOT in the set."),
+        ("Code:\nimport re\nprint(re.findall(r'[a-z]+', 'Hello World 123'))\n\nWhat is the output?", "['ello', 'orld'] — [a-z] matches lowercase letters only, so capital letters and digits break the match."),
+        ("Code:\nimport re\nprint(re.findall(r'\\w+', \"it's a test-run\"))\n\nWhat is the output and what does \\w match?", "['it', 's', 'a', 'test', 'run'] — \\w matches word characters (letters, digits, underscore), so apostrophes and hyphens split the matches."),
+        ("Code:\nimport re\nprint(re.findall(r'\\s+', 'a  b\\tc\\nd'))\n\nWhat is the output and what does \\s match?", "['  ', '\\t', '\\n'] — \\s matches any whitespace character, including spaces, tabs, and newlines."),
+        ("Code:\nimport re\nprint(re.findall(r'a{2,4}', 'a aa aaa aaaaa'))\n\nWhat is the output and what does {2,4} mean?", "['aa', 'aaa', 'aaaa'] — {2,4} requires between 2 and 4 repetitions; the run of 5 a's is matched as 4 then leaves 1 unmatched."),
+        ("Code:\nimport re\nprint(re.findall(r'<.+>', '<a><b>'))\n\nWhat is the output and why doesn't it just match '<a>' and '<b>' separately?", "['<a><b>'] — by default quantifiers are greedy, so .+ consumes as much as possible while still allowing the overall pattern to match."),
+        ("Code:\nimport re\nprint(re.findall(r'<.+?>', '<a><b>'))\n\nWhat is the output and what does the ? after + do?", "['<a>', '<b>'] — appending ? makes the quantifier non-greedy (lazy), matching as little as possible."),
+        ("Code:\nimport re\nprint(bool(re.match(r'cat', 'CAT', re.IGNORECASE)))\n\nWhat is the output and what does re.IGNORECASE do?", "True — it makes the match case-insensitive."),
+        ("Code:\nimport re\npattern = re.compile(r'''\n    \\d+  # the number\n    [a-z]+  # the unit\n''', re.VERBOSE)\nprint(pattern.findall('10kg 5lb'))\n\nWhat is the output and what does re.VERBOSE enable?", "['10kg', '5lb'] — VERBOSE mode lets you write the pattern across multiple lines with whitespace and comments for readability, both ignored during matching."),
+        ("Code:\nimport re\nprint(re.findall(r'foo(?=bar)', 'foobar foobaz'))\n\nWhat is the output and what does (?=...) do?", "['foo'] — this is a positive lookahead: it matches 'foo' only where it's followed by 'bar', without including 'bar' in the match."),
+        ("Code:\nimport re\nprint(re.findall(r'foo(?!bar)', 'foobar foobaz'))\n\nWhat is the output and what does (?!...) do?", "['foo'] — this is a negative lookahead: it matches 'foo' only where it's NOT followed by 'bar', so only the 'foobaz' occurrence matches."),
+        ("Code:\nimport re\nprint(re.findall(r'(?<=\\$)\\d+', 'price: $50, count: 3'))\n\nWhat is the output and what does (?<=...) do?", "['50'] — this is a positive lookbehind: it matches digits only where preceded by a dollar sign, without including the $ in the result."),
+        ("Code:\nimport re\nprint(re.findall(r'cat|dog', 'I have a cat and a dog'))\n\nWhat is the output and what does | mean?", "['cat', 'dog'] — | acts as alternation (OR), matching either pattern on either side."),
+        ("Why should regex patterns with backslashes usually be written as raw strings?", "Because raw strings (r'...') prevent Python from interpreting backslash sequences like \\d or \\b as escape codes before re even sees the pattern."),
+        ("Code:\nimport re\nprint(re.escape('3.14 (pi)'))\n\nWhat is the output and what does re.escape do?", "3\\.14\\ \\(pi\\) — it escapes all regex-special characters in a string so it can be safely used as a literal pattern."),
+        ("Code:\nimport re\nresult = re.sub(r'(\\w+)@(\\w+)', r'\\2 at \\1', 'sam@example')\nprint(result)\n\nWhat is the output and what do \\1 and \\2 refer to in the replacement?", "example at sam — they refer back to the text captured by the first and second groups in the pattern."),
+        ("Code:\nimport re\nprint(re.fullmatch(r'\\d{3}-\\d{4}', '123-4567'))\nprint(re.fullmatch(r'\\d{3}-\\d{4}', '123-4567x'))\n\nWhat is the output and how does fullmatch differ from match?", "A Match object, then None — fullmatch() requires the entire string to match the pattern, not just a portion at the start."),
+        ("Code:\ns = 'Hello World'\nprint(s.lower())\nprint(s.upper())\n\nWhat is the output?", "hello world\nHELLO WORLD"),
+        ("Code:\ns = 'Hello World'\nprint(s.replace('World', 'Python'))\n\nWhat is the output?", "Hello Python — replace() swaps every occurrence of the first substring with the second."),
+        ("Code:\nprint('  spaced out  '.strip())\nprint('  spaced out  '.lstrip())\nprint('  spaced out  '.rstrip())\n\nWhat is the output?", "'spaced out'\n'spaced out  '\n'  spaced out' — strip removes both sides, lstrip only the left, rstrip only the right."),
+        ("Code:\nprint('a-b-c'.split('-'))\nprint('-'.join(['a', 'b', 'c']))\n\nWhat is the output?", "['a', 'b', 'c']\na-b-c — split() breaks a string apart by a separator, join() does the reverse."),
+        ("Code:\nprint('hello'.startswith('he'), 'hello'.endswith('lo'))\n\nWhat is the output?", "True True"),
+        ("Code:\nprint('42'.isdigit(), 'abc'.isalpha(), 'abc123'.isalnum())\n\nWhat is the output?", "True True True"),
+        ("Code:\nprint('7'.zfill(3))\n\nWhat is the output and what does zfill do?", "007 — zfill pads a numeric string with leading zeros to reach the given width."),
+        ("Code:\nprint('7'.rjust(4, '*'))\nprint('7'.ljust(4, '*'))\nprint('7'.center(5, '*'))\n\nWhat is the output?", "***7\n7***\n**7**"),
+        ("Code:\ntable = str.maketrans('abc', 'xyz')\nprint('aabbcc'.translate(table))\n\nWhat is the output and what does maketrans/translate do?", "xxyyzz — maketrans builds a character mapping table, and translate() applies it, replacing each mapped character."),
+        ("Code:\nprint(' '.join('hello world'.split()))\n\nWhat does this do, and why is it a common idiom for cleaning whitespace?", "It collapses any run of whitespace (including multiple spaces, tabs, newlines) down to single spaces, since split() with no argument splits on any whitespace and discards empty strings."),
+    ],
+    "Working with External Libraries and APIs": [
+        ("What is an API?", "An Application Programming Interface — a defined set of rules that lets one piece of software communicate with another."),
+        ("What is a REST API?", "A web API that follows REST principles, using standard HTTP methods (GET, POST, PUT, DELETE) and URLs to operate on resources."),
+        ("What third-party library is most commonly used to make HTTP requests in Python?", "The requests library."),
+        ("Command: pip install requests\n\nWhat does this do?", "Downloads and installs the requests package from PyPI into the current (virtual) environment."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/data')\nprint(response.status_code)\n\nWhat does response.status_code represent?", "The HTTP status code returned by the server, e.g. 200 for success or 404 for not found."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/data')\ndata = response.json()\nprint(type(data))\n\nWhat does response.json() do?", "Parses the response body as JSON and returns it as a Python object (typically a dict or list)."),
+        ("What does an HTTP status code in the 200 range generally mean?", "Success — the request was received, understood, and processed correctly."),
+        ("What does an HTTP status code in the 400 range generally mean?", "A client error — something about the request itself was invalid, such as bad syntax or missing authentication."),
+        ("What does an HTTP status code in the 500 range generally mean?", "A server error — the server failed to fulfill a valid request due to a problem on its end."),
+        ("What does HTTP status code 404 mean specifically?", "Not Found — the requested resource doesn't exist at that URL."),
+        ("What does HTTP status code 401 mean specifically?", "Unauthorized — the request lacks valid authentication credentials."),
+        ("What does HTTP status code 429 mean specifically?", "Too Many Requests — the client has been rate-limited and should slow down or retry later."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/search', params={'q': 'python', 'limit': 5})\nprint(response.url)\n\nWhat does the params argument do?", "It builds and appends a URL query string from the dict automatically, e.g. ?q=python&limit=5."),
+        ("Code:\nimport requests\nresponse = requests.post('https://api.example.com/items', json={'name': 'widget'})\n\nWhat does passing json=... do, as opposed to data=...?", "It serializes the dict to a JSON string, sets the Content-Type header to application/json, and sends it as the request body."),
+        ("Code:\nimport requests\nheaders = {'Authorization': 'Bearer abc123'}\nresponse = requests.get('https://api.example.com/me', headers=headers)\n\nWhat is this pattern commonly used for?", "Passing an authentication token (here a Bearer token) so the API can identify and authorize the caller."),
+        ("Code:\nimport requests\ntry:\n    response = requests.get('https://api.example.com/data', timeout=5)\nexcept requests.exceptions.Timeout:\n    print('request timed out')\n\nWhat does the timeout argument do?", "It caps how long requests will wait for a response before giving up and raising a Timeout exception, instead of hanging indefinitely."),
+        ("Code:\nimport requests\ntry:\n    response = requests.get('https://bad-domain-xyz.invalid')\nexcept requests.exceptions.ConnectionError:\n    print('could not connect')\n\nWhat is the output?", "could not connect — ConnectionError is raised when the network request itself can't reach the server (DNS failure, refused connection, etc.)."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/missing')\nresponse.raise_for_status()\n\nWhat does raise_for_status() do?", "It raises an HTTPError if the response's status code indicates a client or server error (4xx/5xx); it does nothing for successful responses."),
+        ("Code:\nimport requests\nsession = requests.Session()\nsession.headers.update({'Authorization': 'Bearer abc123'})\nr1 = session.get('https://api.example.com/a')\nr2 = session.get('https://api.example.com/b')\n\nWhat is the advantage of using a Session here?", "It reuses the underlying TCP connection and default headers across multiple requests, which is faster and avoids repeating shared setup like auth headers."),
+        ("Code:\nimport json\ndata = {'name': 'Ann', 'active': True}\ntext = json.dumps(data)\nprint(text)\n\nWhat is the output?", "'{\"name\": \"Ann\", \"active\": true}' — json.dumps() serializes a Python object into a JSON-formatted string."),
+        ("Code:\nimport json\ntext = '{\"name\": \"Ann\", \"age\": 25}'\ndata = json.loads(text)\nprint(data['name'])\n\nWhat is the output?", "Ann — json.loads() parses a JSON string into a Python object."),
+        ("Code:\nimport json\ntry:\n    json.loads('{bad json}')\nexcept json.JSONDecodeError as e:\n    print('invalid JSON:', e)\n\nWhat does this demonstrate?", "That malformed JSON text raises a JSONDecodeError when parsed, which should be handled when working with data from external sources like APIs."),
+        ("Why shouldn't API keys or secrets be hardcoded directly into source code?", "Because source code is often shared, committed to version control, or exposed publicly, which would leak the credentials; secrets should instead come from environment variables or a secure secrets manager."),
+        ("Code:\nimport os\napi_key = os.environ.get('API_KEY')\nif not api_key:\n    raise RuntimeError('API_KEY not set')\n\nWhat does this pattern accomplish?", "It reads a secret from an environment variable at runtime instead of hardcoding it, and fails fast with a clear error if it's missing."),
+        ("What is the purpose of a .env file combined with a library like python-dotenv?", "It lets developers define environment variables (like API keys) in a local file that's loaded into the environment at startup, keeping secrets out of source code and version control."),
+        ("What does an API rate limit typically restrict?", "The number of requests a client is allowed to make within a given time window, to prevent overload and abuse of the service."),
+        ("What is exponential backoff, in the context of retrying failed API requests?", "A retry strategy where the wait time between successive retry attempts increases exponentially, reducing load on a struggling server and avoiding tight retry loops."),
+        ("Code:\nimport time\nimport requests\n\ndef get_with_retries(url, retries=3):\n    for attempt in range(retries):\n        try:\n            return requests.get(url, timeout=5)\n        except requests.exceptions.RequestException:\n            if attempt == retries - 1:\n                raise\n            time.sleep(2 ** attempt)\n\nWhat does this function do?", "It retries a failed HTTP request up to a set number of times, waiting progressively longer (1s, 2s, 4s...) between attempts, and re-raises the error if all retries fail."),
+        ("What is pagination in the context of a REST API?", "A technique where a large result set is split across multiple requests/pages (often via a page number, offset, or cursor parameter), rather than returned all at once."),
+        ("Code:\nimport requests\nurl = 'https://api.example.com/items'\nall_items = []\nwhile url:\n    response = requests.get(url).json()\n    all_items.extend(response['results'])\n    url = response.get('next')\nprint(len(all_items))\n\nWhat pattern does this loop implement?", "Following pagination links: it keeps requesting the 'next' page URL supplied by the API until there are no more pages, accumulating all results."),
+        ("What does an HTTP GET request typically do, semantically?", "Retrieves data from the server without modifying it (in a well-designed REST API, GET should be a safe, read-only operation)."),
+        ("What does an HTTP POST request typically do, semantically?", "Sends data to the server to create a new resource or trigger an action that changes state."),
+        ("What does an HTTP PUT request typically do, semantically?", "Replaces an existing resource entirely with the provided data (or creates it at that URL if it doesn't exist)."),
+        ("What does an HTTP PATCH request typically do, semantically?", "Applies a partial update to an existing resource, changing only the specified fields."),
+        ("What does an HTTP DELETE request typically do, semantically?", "Removes the specified resource from the server."),
+        ("What is a webhook?", "A way for one service to notify another automatically by sending an HTTP request to a pre-configured URL when a specific event occurs, instead of the receiver having to poll for updates."),
+        ("What is API authentication typically used for?", "To verify the identity of the caller and determine what data or actions they're allowed to access."),
+        ("What is an API key?", "A unique token issued to a client that identifies and authorizes it when calling an API, usually sent as a header or query parameter."),
+        ("What is OAuth, at a high level?", "An authorization framework that lets a user grant a third-party application limited access to their resources on another service, without sharing their password directly."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/data')\nprint(response.headers['Content-Type'])\n\nWhat does response.headers contain?", "The HTTP response headers sent back by the server, such as Content-Type, as a dict-like object."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/download')\nwith open('file.zip', 'wb') as f:\n    f.write(response.content)\n\nWhat does response.content contain, and why write in binary mode?", "The raw response body as bytes; binary mode ('wb') is used because the downloaded content (like a zip file) isn't text and shouldn't be decoded or have newlines translated."),
+        ("What does it mean for an API to be 'idempotent' for a given method?", "Making the same request multiple times has the same effect as making it once — e.g., PUT and DELETE are expected to be idempotent, while POST typically isn't."),
+        ("What is the purpose of a client library / SDK provided by an API vendor?", "It wraps the raw HTTP calls, authentication, and response parsing into convenient functions/classes, so developers don't have to build those requests by hand."),
+        ("Code:\nfrom unittest.mock import patch\nimport requests\n\ndef fetch_status():\n    return requests.get('https://api.example.com').status_code\n\nwith patch('requests.get') as mock_get:\n    mock_get.return_value.status_code = 200\n    print(fetch_status())\n\nWhat is the output and why is mocking used here?", "200 — patch() replaces requests.get with a mock during the test, so the test doesn't depend on a real network call and can control the exact response it simulates."),
+        ("What is a common reason to catch requests.exceptions.RequestException broadly rather than only specific subclasses?", "It's the base class for all of requests' network-related errors (Timeout, ConnectionError, HTTPError, etc.), so catching it provides a single fallback for 'something went wrong on the network side'."),
+        ("Code:\nimport requests\nresponse = requests.get('https://api.example.com/user/1')\nuser = response.json()\nprint(user.get('email', 'no email on file'))\n\nWhy use .get() with a default here instead of user['email']?", "Because API response fields aren't always guaranteed to be present; .get() avoids a KeyError and provides a sensible fallback if 'email' is missing."),
+        ("What is the difference between synchronous and asynchronous API calls, at a high level?", "A synchronous call blocks the program until the response arrives; an asynchronous call lets the program continue doing other work while waiting for the response."),
+        ("What does 'CORS' stand for and what problem does it address?", "Cross-Origin Resource Sharing — a browser security mechanism that controls whether a web page from one origin is allowed to make requests to a server on a different origin."),
+        ("Why is it good practice to check response.status_code (or use raise_for_status()) before trying to parse response.json()?", "Because an error response (like a 404 or 500 page) often isn't valid JSON, or contains an error payload rather than the expected data, so parsing it as if it succeeded can cause confusing failures."),
+        ("What is versioning in the context of an API (e.g. /v1/, /v2/ in a URL)?", "A way of marking which version of an API's contract a client is using, so the provider can introduce breaking changes in a new version without breaking existing clients on the old one."),
+    ],
+    "Concurrency and Parallelism": [
+        ("What is concurrency?", "The ability of a program to make progress on multiple tasks by interleaving their execution, without necessarily running them at the exact same instant."),
+        ("What is parallelism?", "Running multiple tasks literally at the same time, typically by using multiple CPU cores."),
+        ("What is the GIL (Global Interpreter Lock)?", "A lock in CPython that allows only one thread to execute Python bytecode at a time, even on multi-core machines."),
+        ("Why doesn't Python threading speed up CPU-bound work in CPython?", "Because the GIL prevents more than one thread from executing Python bytecode simultaneously, so CPU-bound threads end up taking turns rather than running in true parallel."),
+        ("Why can Python threading still speed up I/O-bound work despite the GIL?", "Because the GIL is released while a thread waits on I/O (like a network request or disk read), letting other threads run during that wait."),
+        ("Code:\nimport threading\n\ndef greet():\n    print('hello from thread')\n\nt = threading.Thread(target=greet)\nt.start()\nt.join()\n\nWhat does t.start() do, and what does t.join() do?", "start() begins running the thread's target function concurrently; join() blocks the calling code until that thread finishes."),
+        ("Code:\nimport threading\n\ndef worker(n):\n    print(f'worker {n}')\n\nthreads = [threading.Thread(target=worker, args=(i,)) for i in range(3)]\nfor t in threads:\n    t.start()\nfor t in threads:\n    t.join()\nprint('all done')\n\nWhat is guaranteed about the output order?", "'all done' is guaranteed to print last, but the order of the three 'worker N' lines is not guaranteed, since the threads run concurrently and can be scheduled in any order."),
+        ("Code:\nimport threading\ncounter = 0\ndef increment():\n    global counter\n    for _ in range(100000):\n        counter += 1\nthreads = [threading.Thread(target=increment) for _ in range(2)]\nfor t in threads:\n    t.start()\nfor t in threads:\n    t.join()\nprint(counter)\n\nWhy might the output be less than 200000?", "This is a race condition: counter += 1 isn't atomic, so two threads can read the same value before either writes back its increment, silently losing updates."),
+        ("What is a race condition?", "A bug where the correctness of a program depends on the unpredictable timing or interleaving of concurrent operations, often leading to inconsistent results."),
+        ("Code:\nimport threading\ncounter = 0\nlock = threading.Lock()\ndef increment():\n    global counter\n    for _ in range(100000):\n        with lock:\n            counter += 1\nthreads = [threading.Thread(target=increment) for _ in range(2)]\nfor t in threads:\n    t.start()\nfor t in threads:\n    t.join()\nprint(counter)\n\nWhat is the output, and how does the Lock fix the earlier race condition?", "200000 — the lock ensures only one thread can execute the increment at a time, making the read-modify-write operation effectively atomic."),
+        ("What does threading.Lock() provide?", "A mutual-exclusion primitive that only one thread can hold at a time, used to protect shared data from concurrent access."),
+        ("Code:\nimport threading\nlock = threading.Lock()\nlock.acquire()\nlock.acquire()\n\nWhat happens on the second acquire() call, and what's the fix?", "The thread deadlocks, blocking forever since a plain Lock can't be acquired twice by the same thread; a threading.RLock (reentrant lock) allows the same thread to acquire it multiple times."),
+        ("What is a deadlock?", "A situation where two or more threads/processes are each waiting on a resource the other holds, so none of them can ever proceed."),
+        ("What does threading.Event provide?", "A simple flag object that one thread can set() and others can wait() on, useful for signaling between threads."),
+        ("What does threading.Semaphore control?", "It limits how many threads can access a resource concurrently, by maintaining an internal counter that's decremented on acquire and incremented on release."),
+        ("What is a daemon thread?", "A background thread that doesn't prevent the program from exiting; when only daemon threads remain, the interpreter exits without waiting for them to finish."),
+        ("Code:\nimport threading\nt = threading.Thread(target=lambda: None, daemon=True)\n\nWhat does setting daemon=True change about this thread?", "It marks the thread as a daemon, so the main program can exit even if this thread is still running, instead of waiting for it to finish."),
+        ("What is the multiprocessing module used for?", "Running separate Python processes (each with its own interpreter and memory space) to achieve true parallelism, bypassing the GIL."),
+        ("Code:\nimport multiprocessing\n\ndef square(n):\n    return n * n\n\nif __name__ == '__main__':\n    with multiprocessing.Pool(4) as pool:\n        print(pool.map(square, [1, 2, 3, 4]))\n\nWhat is the output, and what does Pool.map do?", "[1, 4, 9, 16] — it distributes the input items across worker processes, applies the function to each in parallel, and collects the results in order."),
+        ("Why does multiprocessing avoid the GIL limitation that threading has?", "Because each process gets its own separate Python interpreter and memory space (and thus its own GIL), so multiple processes can run Python bytecode truly in parallel across CPU cores."),
+        ("Why is if __name__ == '__main__': commonly required around multiprocessing code on some platforms?", "Because starting a new process may re-import the main module; without the guard, that re-import would recursively spawn more processes."),
+        ("Code:\nimport multiprocessing\n\ndef worker(q):\n    q.put('result from process')\n\nif __name__ == '__main__':\n    q = multiprocessing.Queue()\n    p = multiprocessing.Process(target=worker, args=(q,))\n    p.start()\n    print(q.get())\n    p.join()\n\nWhat is the output, and why use a multiprocessing.Queue instead of a regular list here?", "result from process — separate processes don't share memory, so a regular list can't be used to pass data between them; multiprocessing.Queue is built specifically for safe inter-process communication."),
+        ("What is the key practical difference between threading and multiprocessing for CPU-bound work in Python?", "Multiprocessing can achieve real parallel speedup on CPU-bound work by using multiple cores, while threading generally cannot, due to the GIL."),
+        ("What is the key practical difference between threading and multiprocessing for I/O-bound work in Python?", "Threading is usually preferred for I/O-bound work since it's lighter-weight than spawning separate processes, and the GIL is released during I/O waits anyway."),
+        ("Code:\nfrom concurrent.futures import ThreadPoolExecutor\n\ndef square(n):\n    return n * n\n\nwith ThreadPoolExecutor(max_workers=3) as executor:\n    results = list(executor.map(square, [1, 2, 3, 4]))\nprint(results)\n\nWhat is the output?", "[1, 4, 9, 16] — ThreadPoolExecutor.map() runs the function across a pool of worker threads and returns results in the original input order."),
+        ("Code:\nfrom concurrent.futures import ProcessPoolExecutor\n\ndef square(n):\n    return n * n\n\nif __name__ == '__main__':\n    with ProcessPoolExecutor() as executor:\n        results = list(executor.map(square, [1, 2, 3, 4]))\n    print(results)\n\nWhen would ProcessPoolExecutor be preferred over ThreadPoolExecutor?", "For CPU-bound work, since ProcessPoolExecutor uses separate processes that can run truly in parallel across cores, unlike threads which are limited by the GIL."),
+        ("Code:\nfrom concurrent.futures import ThreadPoolExecutor\n\ndef task(n):\n    return n * 2\n\nwith ThreadPoolExecutor() as executor:\n    future = executor.submit(task, 5)\n    print(future.result())\n\nWhat is the output, and what does submit() return?", "10 — submit() schedules the task and immediately returns a Future object, whose .result() blocks until the task completes and then returns its value."),
+        ("Code:\nfrom concurrent.futures import ThreadPoolExecutor, as_completed\n\ndef task(n):\n    return n * n\n\nwith ThreadPoolExecutor() as executor:\n    futures = [executor.submit(task, n) for n in [3, 1, 2]]\n    for f in as_completed(futures):\n        print(f.result())\n\nWhat does as_completed() do, and is the print order guaranteed to match the input order?", "as_completed() yields futures as they finish, not in submission order, so the print order reflects completion time and is not guaranteed to match [3, 1, 2]."),
+        ("What is asyncio?", "Python's standard library framework for writing concurrent code using coroutines, an event loop, and async/await syntax, typically for I/O-bound tasks."),
+        ("Code:\nimport asyncio\n\nasync def greet():\n    print('hello')\n\nasyncio.run(greet())\n\nWhat is the output, and what does asyncio.run() do?", "hello — asyncio.run() creates an event loop, runs the given coroutine to completion, and then closes the loop."),
+        ("What is a coroutine, in the context of asyncio?", "A special function defined with async def that can be paused at await points and resumed later by the event loop, without blocking the whole program."),
+        ("Code:\nimport asyncio\n\nasync def say_after(delay, message):\n    await asyncio.sleep(delay)\n    print(message)\n\nasync def main():\n    await say_after(1, 'hello')\n    await say_after(1, 'world')\n\nasyncio.run(main())\n\nAbout how long does this take to run, and why?", "About 2 seconds — because each say_after call is awaited sequentially, one after the other, rather than running concurrently."),
+        ("Code:\nimport asyncio\n\nasync def say_after(delay, message):\n    await asyncio.sleep(delay)\n    print(message)\n\nasync def main():\n    await asyncio.gather(\n        say_after(1, 'hello'),\n        say_after(1, 'world'),\n    )\n\nasyncio.run(main())\n\nAbout how long does this take to run, and what does asyncio.gather do?", "About 1 second — gather() runs multiple coroutines concurrently and waits for all of them to finish, so the two 1-second sleeps overlap instead of stacking."),
+        ("What does the await keyword do?", "It pauses the current coroutine until the awaited operation (another coroutine, task, or future) completes, yielding control back to the event loop in the meantime."),
+        ("Code:\nimport asyncio\n\nasync def worker(n):\n    await asyncio.sleep(0.1)\n    return n * n\n\nasync def main():\n    task = asyncio.create_task(worker(5))\n    print('task started')\n    result = await task\n    print(result)\n\nasyncio.run(main())\n\nWhat is the output, and what does asyncio.create_task() do?", "task started\n25 — create_task() schedules the coroutine to run concurrently on the event loop right away, returning a Task handle that can be awaited later, rather than running it immediately inline."),
+        ("Code:\nimport asyncio\n\nasync def slow():\n    await asyncio.sleep(5)\n    return 'done'\n\nasync def main():\n    try:\n        result = await asyncio.wait_for(slow(), timeout=1)\n    except asyncio.TimeoutError:\n        print('timed out')\n\nasyncio.run(main())\n\nWhat is the output, and what does asyncio.wait_for do?", "timed out — wait_for() runs a coroutine but cancels it and raises TimeoutError if it doesn't finish within the given time limit."),
+        ("What is the event loop in asyncio?", "The core scheduler that runs coroutines, dispatches callbacks, and handles I/O events, deciding which task to run next whenever one is paused at an await."),
+        ("What is the key difference between asyncio concurrency and threading concurrency?", "asyncio uses a single thread with cooperative multitasking (coroutines voluntarily yield control at await points), while threading uses OS-level preemptive scheduling across multiple threads."),
+        ("Why can asyncio code run into trouble if a coroutine calls a blocking (synchronous) function instead of an async one?", "Because a blocking call doesn't yield control back to the event loop, so it freezes the entire event loop and prevents any other coroutine from making progress during that time."),
+        ("Code:\nimport asyncio\n\nasync def worker(n):\n    if n == 2:\n        raise ValueError('bad input')\n    return n\n\nasync def main():\n    tasks = [asyncio.create_task(worker(n)) for n in range(4)]\n    results = await asyncio.gather(*tasks, return_exceptions=True)\n    print(results)\n\nasyncio.run(main())\n\nWhat is the output, and what does return_exceptions=True change?", "[0, 1, ValueError('bad input'), 3] — normally gather() would immediately raise the first exception it encounters; return_exceptions=True instead collects exceptions as regular results in the returned list."),
+        ("Code:\nimport asyncio\n\nasync def gen():\n    for i in range(3):\n        await asyncio.sleep(0)\n        yield i\n\nasync def main():\n    async for value in gen():\n        print(value)\n\nasyncio.run(main())\n\nWhat is the output, and what is 'gen' an example of?", "0\n1\n2 — this is an async generator, which supports async for to iterate over values produced asynchronously."),
+        ("What does asyncio.Lock provide, and how does it differ from threading.Lock?", "It serializes access to a shared resource among coroutines, similar in purpose to threading.Lock, but designed to be awaited (async with lock) so it cooperates with the event loop instead of blocking a whole OS thread."),
+        ("What is the producer-consumer pattern, and what data structure commonly implements it in concurrent Python code?", "A pattern where one or more 'producer' threads/processes generate work items and one or more 'consumer' threads/processes process them; a thread-safe Queue (or multiprocessing.Queue / asyncio.Queue) is typically used to hand items off safely between them."),
+        ("Code:\nimport queue\nimport threading\n\nq = queue.Queue()\n\ndef producer():\n    for i in range(3):\n        q.put(i)\n\ndef consumer():\n    for _ in range(3):\n        print(q.get())\n\nt1 = threading.Thread(target=producer)\nt2 = threading.Thread(target=consumer)\nt1.start(); t2.start()\nt1.join(); t2.join()\n\nWhy is queue.Queue safe to share between threads without an explicit lock?", "queue.Queue has its own internal locking, making put() and get() thread-safe operations on their own, so callers don't need to add extra synchronization for basic producer/consumer use."),
+        ("When would you choose multiprocessing over asyncio for a task?", "When the work is CPU-bound (heavy computation) rather than I/O-bound, since asyncio's concurrency model doesn't provide true parallelism on a single core and won't speed up CPU-heavy code."),
+        ("When would you choose asyncio over threading for a task?", "When handling a very large number of concurrent I/O-bound operations (like thousands of network connections), since coroutines are much lighter-weight than OS threads and avoid thread-related overhead and locking complexity."),
+        ("What is 'embarrassingly parallel' work, and why does it suit multiprocessing well?", "Work that can be split into independent chunks with little or no communication needed between them (e.g. processing separate files); it maps cleanly onto multiple worker processes since there's minimal need for shared state or synchronization."),
+        ("Code:\nimport time\nimport concurrent.futures\n\ndef io_task(n):\n    time.sleep(1)\n    return n\n\nstart = time.time()\nwith concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:\n    list(executor.map(io_task, range(5)))\nprint(round(time.time() - start))\n\nAbout what does this print, and why?", "About 1 (second) — since all 5 I/O-bound tasks run concurrently across the thread pool, the total time is close to that of a single task rather than 5 tasks run one after another."),
+        ("What is a common risk of using too many threads or processes at once?", "Excessive context-switching or process-creation overhead can outweigh the benefits of concurrency, actually slowing the program down and consuming excessive memory/CPU resources."),
+        ("What does GIL contention mean in a CPU-bound multithreaded Python program?", "Threads spend time waiting to acquire the GIL from each other instead of doing useful work, which can make heavily multithreaded CPU-bound code perform worse than a single-threaded version."),
+    ],
 }
 
 
@@ -507,15 +718,23 @@ def main(page: ft.Page):
     page.title = "PyQuizy"
     page.window.width = 600
     page.window.height = 750
+    page.padding = 0
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.theme_mode = ft.ThemeMode.DARK
+
+    # --- Navigation -----------------------------------------------------
+    # Everything below drives page.views instead of clearing/re-adding
+    # page.controls directly. This matters for mobile: Flet only wires the
+    # Android hardware/gesture back button up to something meaningful when
+    # there's an actual view stack to pop. Without it, the back button has
+    # nothing to do and the app gets torn down uncleanly on every press,
+    # which is what was causing the slow, stuck-session relaunch.
 
     def build_home_view() -> ft.View:
         menu_buttons = [
             ft.ElevatedButton(
                 topic,
-                width=500,
-                height=60,
+                height=56,
                 on_click=lambda e, t=topic: show_quiz(t),
             )
             for topic in QUIZ_DATA.keys()
@@ -524,24 +743,34 @@ def main(page: ft.Page):
         return ft.View(
             route="/",
             scroll=ft.ScrollMode.AUTO,
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            padding=ft.Padding(left=16, right=16, top=20, bottom=20),
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             controls=[
-                ft.Text("Welcome To PyQuizy\U0001f40d!", size=24, weight=ft.FontWeight.BOLD),
-                ft.Column(menu_buttons, spacing=10),
+                ft.Text(
+                    "Welcome To PyQuizy\U0001f40d!",
+                    size=24,
+                    weight=ft.FontWeight.BOLD,
+                    text_align=ft.TextAlign.CENTER,
+                ),
+                ft.Column(
+                    menu_buttons,
+                    spacing=10,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                ),
             ],
         )
 
     def show_home(e=None):
         # Reset the view stack back down to just the home screen. Used both
-        # for the initial launch and for the AppBar back arrow.
+        # for the initial launch and for the AppBar/back-button navigation.
         page.views.clear()
         page.views.append(build_home_view())
         page.update()
 
     def build_question_control(index: int, question: str, answer: str):
-        """Build a single question block in the original list style:
-        a numbered question (with a syntax-highlighted code block if
-        present), a copy button, and an expandable 'Show Answer' tile.
+        """Build a single question block: a numbered question (with a
+        syntax-highlighted code block if present), a copy button, and an
+        expandable 'Show Answer' tile.
         """
         code, lang, remaining_text = _parse_code_question(question)
 
@@ -550,6 +779,13 @@ def main(page: ft.Page):
             # the synchronous page.set_clipboard(), newer Flet (1.0+) uses
             # an async ft.Clipboard() service instead. Try both so this
             # works regardless of which Flet version is installed.
+            #
+            # The asyncio.wait_for timeout below is a deliberate safety
+            # net: if the app loses focus mid-await (e.g. the user hits
+            # back right as they tap copy), an unresolved await here can
+            # leave the session's event loop stuck waiting forever, which
+            # is exactly the kind of stuck state that made relaunching the
+            # app slow. Timing out guarantees this can never hang.
             copied = False
             if hasattr(page, "set_clipboard"):
                 try:
@@ -559,7 +795,7 @@ def main(page: ft.Page):
                     copied = False
             if not copied:
                 try:
-                    await ft.Clipboard().set(question)
+                    await asyncio.wait_for(ft.Clipboard().set(question), timeout=3)
                     copied = True
                 except Exception:
                     copied = False
@@ -595,11 +831,16 @@ def main(page: ft.Page):
             )
             body_controls.append(
                 ft.Container(
-                    content=ft.Markdown(
-                        f"```{lang}\n{code}\n```",
-                        selectable=True,
-                        extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
-                        code_theme=ft.MarkdownCodeTheme.ATOM_ONE_DARK,
+                    content=ft.Row(
+                        [
+                            ft.Markdown(
+                                f"```{lang}\n{code}\n```",
+                                selectable=True,
+                                extension_set=ft.MarkdownExtensionSet.GITHUB_WEB,
+                                code_theme=ft.MarkdownCodeTheme.ATOM_ONE_DARK,
+                            )
+                        ],
+                        scroll=ft.ScrollMode.AUTO,  # long lines scroll, never clip
                     ),
                     bgcolor="#1e1e1e",
                     border_radius=8,
@@ -644,18 +885,12 @@ def main(page: ft.Page):
         )
 
     def show_quiz(topic: str):
-        """Show questions in the original scrollable list style (each with
-        its own 'Show Answer' expander), but load them in small batches
-        instead of building all 50 at once. Building every question's
-        Markdown/code block and ExpansionTile up front was what made the
-        screen slow to appear on mobile; loading a first batch and then
-        more on demand keeps the same look while opening instantly.
-
-        The quiz screen is now pushed onto page.views as its own View
-        (instead of swapping page.controls in place), so Flet's built-in
-        routing stack has something to pop. That's what lets the Android
-        hardware back button return to the topic menu on its own, the same
-        way the AppBar back arrow does.
+        """Push the quiz as its own View on page.views (instead of clearing
+        and re-adding page.controls). Questions still load in small batches
+        so opening a topic stays instant, but now the view is a real entry
+        on the navigation stack — which is what lets the Android hardware
+        back button pop back to the topic menu on its own, matching the
+        AppBar back arrow, instead of tearing the whole app down.
         """
         questions = QUIZ_DATA[topic]
         total = len(questions)
@@ -683,6 +918,8 @@ def main(page: ft.Page):
                         on_click=load_more,
                     )
                 )
+            else:
+                load_more_row.controls.append(ft.Container(height=12))
             page.update()
 
         def go_back(e=None):
@@ -693,6 +930,7 @@ def main(page: ft.Page):
         quiz_view = ft.View(
             route=f"/quiz/{topic}",
             scroll=ft.ScrollMode.AUTO,
+            padding=ft.Padding(left=16, right=16, top=12, bottom=12),
             appbar=ft.AppBar(
                 leading=ft.IconButton(ft.Icons.ARROW_BACK, on_click=go_back),
                 title=ft.Text(topic),
@@ -706,11 +944,12 @@ def main(page: ft.Page):
         load_more()
 
     def handle_view_pop(e: ft.ViewPopEvent):
-        # Fires when the AppBar back arrow is tapped AND when the Android
-        # hardware/gesture back button is pressed, since Flet intercepts the
-        # system back action whenever there's more than one view on the
-        # stack. Popping here keeps both paths in sync so both return to the
-        # topic menu underneath.
+        # Fires for the AppBar back arrow and for the Android
+        # hardware/gesture back button, since Flet routes both through the
+        # views stack. Popping here keeps both paths in sync. When only the
+        # home view is left, there's nothing to pop, so Flet/Android falls
+        # through to their normal "exit app" behavior — which is now a
+        # clean shutdown instead of the previous undefined state.
         if len(page.views) > 1:
             page.views.pop()
             page.update()
